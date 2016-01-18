@@ -52,6 +52,7 @@
 #define ESHUTDOWN               (WSAESHUTDOWN|PWIN32ErrorFlag)
 #define ETOOMANYREFS            (WSAETOOMANYREFS|PWIN32ErrorFlag)
 #define ETIMEDOUT               (WSAETIMEDOUT|PWIN32ErrorFlag)
+#define EWOULDBLOCK             (WSAEWOULDBLOCK|PWIN32ErrorFlag)
 #define ECONNREFUSED            (WSAECONNREFUSED|PWIN32ErrorFlag)
 #define EHOSTDOWN               (WSAEHOSTDOWN|PWIN32ErrorFlag)
 #define EHOSTUNREACH            (WSAEHOSTUNREACH|PWIN32ErrorFlag)

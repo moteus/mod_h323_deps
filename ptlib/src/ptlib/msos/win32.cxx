@@ -26,9 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 25645 $
- * $Author: rjongbloed $
- * $Date: 2011-05-01 19:19:49 -0500 (Sun, 01 May 2011) $
+ * $Revision: 27130 $
+ * $Author: ededu $
+ * $Date: 2012-03-06 10:00:03 -0600 (Tue, 06 Mar 2012) $
  */
 
 #include <ptlib.h>
@@ -46,6 +46,8 @@
   #include <process.h>
   #pragma comment(lib, "mpr.lib")
 #endif
+
+#include <ptlib/msos/ptlib/ipsock.h>
 
 #if defined(P_WIN_COM) 
   #include <objbase.h>
@@ -92,7 +94,6 @@ void PTime::SetFromFileTime(const FILETIME & timestamp)
   ULARGE_INTEGER i;
   i.HighPart = timestamp.dwHighDateTime;
   i.LowPart = timestamp.dwLowDateTime;
-  i.QuadPart;
 
   theTime = (time_t)(i.QuadPart/scale - delta);
   microseconds = (long)(i.QuadPart%scale/10);
@@ -593,7 +594,6 @@ PBoolean PChannel::ConvertOSError(int status, Errors & lastError, int & osError)
     switch (osError) {
       case ERROR_INVALID_HANDLE :
       case WSAEBADF :
-      case WSAENOTSOCK :
         osError = EBADF;
         break;
       case ERROR_INVALID_PARAMETER :
@@ -610,15 +610,63 @@ PBoolean PChannel::ConvertOSError(int status, Errors & lastError, int & osError)
       case WSAEINTR :
         osError = EINTR;
         break;
+      case WSAEINPROGRESS :
+        osError = EINPROGRESS;
+        break;
+      case WSAENOTSOCK :
+        osError = ENOTSOCK;
+        break;
+      case WSAEOPNOTSUPP :
+        osError = EOPNOTSUPP;
+        break;
+      case WSAEAFNOSUPPORT :
+        osError = EAFNOSUPPORT;
+        break;
+      case WSAEADDRINUSE :
+        osError = EADDRINUSE;
+        break;
+      case WSAEADDRNOTAVAIL :
+        osError = EADDRNOTAVAIL;
+        break;
+      case WSAENETDOWN :
+        osError = ENETDOWN;
+        break;
+      case WSAENETUNREACH :
+        osError = ENETUNREACH;
+        break;
+      case WSAENETRESET :
+        osError = ENETRESET;
+        break;
+      case WSAECONNABORTED :
+        osError = ECONNABORTED;
+        break;
+      case WSAECONNRESET :
+        osError = ECONNRESET;
+        break;
+      case WSAENOBUFS :
+        osError = ENOBUFS;
+        break;
+      case WSAEISCONN :
+        osError = EISCONN;
+        break;
+      case WSAENOTCONN :
+        osError = ENOTCONN;
+        break;
+      case WSAECONNREFUSED :
+        osError = ECONNREFUSED;
+        break;
+      case WSAEHOSTUNREACH :
+        osError = EHOSTUNREACH;
+        break;
       case WSAEMSGSIZE :
-        osError |= PWIN32ErrorFlag;
-        lastError = BufferTooSmall;
-        return PFalse;
+        osError = EMSGSIZE;
+        break;
       case WSAEWOULDBLOCK :
+        osError = EWOULDBLOCK;
+        break;
       case WSAETIMEDOUT :
-        osError |= PWIN32ErrorFlag;
-        lastError = Timeout;
-        return PFalse;
+        osError = ETIMEDOUT;
+        break;
       default :
         osError |= PWIN32ErrorFlag;
     }
@@ -650,7 +698,12 @@ PBoolean PChannel::ConvertOSError(int status, Errors & lastError, int & osError)
       lastError = NotOpen;
       break;
     case EAGAIN :
+    case ETIMEDOUT :
+    case EWOULDBLOCK :
       lastError = Timeout;
+      break;
+    case EMSGSIZE :
+      lastError = BufferTooSmall;
       break;
     case EINTR :
       lastError = Interrupted;
@@ -746,10 +799,10 @@ void PThread::Win32AttachThreadInput()
 
 PThread::PThread()
   : autoDelete(false)
-  , m_isProcess(true)
-  , originalStackSize(0)
   , threadHandle(GetCurrentThread())
   , threadId(GetCurrentThreadId())
+  , m_isProcess(true)
+  , originalStackSize(0)
 {
   if (!PProcess::IsInitialised())
     return;
@@ -963,10 +1016,11 @@ PBoolean PThread::IsSuspended() const
 void PThread::SetAutoDelete(AutoDeleteFlag deletion)
 {
   PAssert(deletion != AutoDeleteThread || this != &PProcess::Current(), PLogicError);
-  if (autoDelete == (deletion != AutoDeleteThread))
+  bool newAutoDelete = (deletion == AutoDeleteThread);
+  if (autoDelete == newAutoDelete)
     return;
 
-  autoDelete = deletion == AutoDeleteThread;
+  autoDelete = newAutoDelete;
 
   PProcess & process = PProcess::Current();
 
