@@ -297,7 +297,7 @@ PBoolean PMail::SendNote(const PString & recipient,
       count = 0;
       for (i = attachments.begin(); i != attachments.end(); i++) {
         message.lpFiles[count].nPosition = (DWORD)-1;
-        message.lpFiles[count++].lpszPathName = (CMC_string)(const char *)*i;
+        message.lpFiles[count++].lpszPathName = (LPSTR)(const char *)*i;
       }
     }
 
